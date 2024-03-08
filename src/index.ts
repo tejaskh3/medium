@@ -8,6 +8,6 @@ app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
 
-app.use("/api/v1/user", userRouter);
-app.use("/api/v1/blog", blogRouter);
+app.route("/api/v1/user", userRouter);
+app.route("/api/v1/blog", blogRouter);
 export default app;
