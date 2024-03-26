@@ -1,8 +1,14 @@
 import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
+import { decode, sign, verify } from "hono/jwt";
 
-const router = new Hono();
+const router = new Hono<{
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+  };
+}>();
 
 function getPrisma(datasourceUrl: any) {
   return new PrismaClient({
@@ -22,7 +28,8 @@ router.post("/signup", async (c) => {
         password: body.password,
       },
     });
-    return c.json({ success: true, message: "signup successful", data: res });
+    const jwt = await sign({ id: res.id }, c.env.JWT_SECRET);
+    return c.json({ success: true, message: "signup successful", data: jwt });
   } catch (error: any) {
     return c.json({
       success: false,
@@ -41,7 +48,17 @@ router.post("/login", async (c) => {
         email: body.email,
       },
     });
-    return c.json({ success: true, message: "login successful", data: res });
+    if (!res) {
+      c.status(403);
+      return c.json({
+        success: false,
+        message: "login unsuccessful",
+        data: "user not found",
+      });
+    }
+
+    const jwt = await sign({ id: res.id }, c.env.JWT_SECRET);
+    return c.json({ success: true, message: "login successful", data: jwt });
   } catch (error: any) {
     return c.json({
       success: false,
