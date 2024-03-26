@@ -17,6 +17,7 @@ function getPrisma(datasourceUrl: any) {
   }).$extends(withAccelerate());
 }
 
+// middleware for /blog routes
 router.use("/*", async (c, next) => {
   const authHeader = c.req.header("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer")) {
@@ -50,7 +51,11 @@ router.post("/", async (c) => {
     });
     console.log(blog);
     c.status(201);
-    return c.json({ success: true, message: "Blog posted successfully" });
+    return c.json({
+      success: true,
+      message: "Blog posted successfully",
+      data: blog,
+    });
   } catch (error: any) {
     console.log(error);
     return c.json({
@@ -90,6 +95,27 @@ router.patch("/", async (c) => {
     });
   }
 });
+
+router.get("/bulk", async (c) => {
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  try {
+    const blogs = await prisma.post.findMany({});
+    return c.json({
+      success: true,
+      message: "Success getting all blogs.",
+      data: blogs,
+    });
+  } catch (error: any) {
+    console.log(error);
+    c.status(500);
+    return c.json({
+      success: false,
+      message: "Error getting all blogs.",
+      data: error.message,
+    });
+  }
+});
+
 router.get("/:id", async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   try {
@@ -116,25 +142,6 @@ router.get("/:id", async (c) => {
     return c.json({
       success: false,
       message: "Error getting a post.",
-      data: error.message,
-    });
-  }
-});
-router.get("/bulk", async (c) => {
-  const prisma = getPrisma(c.env.DATABASE_URL);
-  try {
-    const blogs = await prisma.post.findMany({});
-    return c.json({
-      success: true,
-      message: "Success getting all blogs.",
-      data: blogs,
-    });
-  } catch (error: any) {
-    console.log(error);
-    c.status(500);
-    return c.json({
-      success: false,
-      message: "Error getting all blogs.",
       data: error.message,
     });
   }
